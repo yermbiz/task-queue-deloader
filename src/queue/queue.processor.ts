@@ -16,25 +16,35 @@ const logger = pino({
 @Processor('task-queue')
 @Injectable()
 export class QueueProcessor {
-  private static completedJobsCounter = new client.Counter({
-    name: 'completed_jobs_total',
-    help: 'Total number of completed jobs',
-  });
+  private static completedJobsCounter: client.Counter;
 
   constructor() {
-    client.register.registerMetric(QueueProcessor.completedJobsCounter);
-    console.log('✅ QueueProcessor has started and is ready to process jobs.');
+    this.initMetrics();
+    logger.info('✅ QueueProcessor has started and is ready to process jobs.');
+  }
+
+  private initMetrics() {
+    if (!QueueProcessor.completedJobsCounter) {
+      QueueProcessor.completedJobsCounter = new client.Counter({
+        name: 'completed_jobs_total',
+        help: 'Total number of completed jobs',
+      });
+      client.register.registerMetric(QueueProcessor.completedJobsCounter);
+    }
   }
 
   @Process('process-task')
   async handleTask(job: Job) {
+    const taskId = job.id;
     try {
-      logger.info(`Processing task ${job.id}: ${JSON.stringify(job.data)}`);
-      await new Promise((res) => setTimeout(res, 2000));
+      logger.info({ taskId, data: job.data }, 'Processing task');
+
+      await new Promise((resolve) => setImmediate(resolve)); // Simulate async work
+
       QueueProcessor.completedJobsCounter.inc();
-      logger.info(`Task ${job.id} completed`);
+      logger.info({ taskId }, '✅ Task completed');
     } catch (error) {
-      logger.error(`Task ${job.id} failed: ${error.message}`);
+      logger.error({ taskId, error: error.message }, '❌ Task failed');
     }
   }
 }
