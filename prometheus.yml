@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s  # Как часто опрашивать метрики
+
+scrape_configs:
+  - job_name: 'task-queue-deloader'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3020']  # Используем этот адрес!

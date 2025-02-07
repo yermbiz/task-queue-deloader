@@ -42,7 +42,12 @@ export class QueueProcessor {
       await new Promise((resolve) => setImmediate(resolve)); // Simulate async work
 
       QueueProcessor.completedJobsCounter.inc();
-      logger.info({ taskId }, '✅ Task completed');
+      const completedJobs = await QueueProcessor.completedJobsCounter.get();
+
+      logger.info(
+        { taskId, completedJobs: completedJobs.values[0].value },
+        '✅ Task completed',
+      );
     } catch (error) {
       logger.error({ taskId, error: error.message }, '❌ Task failed');
     }

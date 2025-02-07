@@ -1,73 +1,104 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Task Queue Deloader 🚀
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Task Queue Deloader is a background job processing system that integrates **RabbitMQ** and **BullMQ (Redis)** to efficiently handle asynchronous tasks. It provides **reliability, automatic retries, monitoring, and easy scaling**, making it ideal for microservices and high-load applications.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 📌 Features
+- ✅ **RabbitMQ Integration** – Accepts tasks from external services.
+- ✅ **BullMQ (Redis) for Queue Management** – Manages job execution efficiently.
+- ✅ **Automatic Retries** – Configurable attempts and exponential backoff.
+- ✅ **Prometheus & Grafana Monitoring** – Track system performance with real-time metrics.
+- ✅ **Docker Support** – Easy deployment with Redis, RabbitMQ, and Prometheus.
+- ✅ **WebSockets (Planned)** – Optional real-time task updates.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🚀 Getting Started
 
-## Installation
+### 1️⃣ **Run Redis & RabbitMQ**
+To start the required services, use Docker:
+```sh
+# Start RabbitMQ with management UI
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
 
-```bash
-$ npm install
+# Start Redis
+docker run -d --name redis -p 6379:6379 redis
 ```
 
-## Running the app
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+Alternatively, start all services using `docker-compose`:
+```sh
+docker-compose up -d
 ```
 
-## Test
+---
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+### 2️⃣ **Install Dependencies**
+```sh
+npm install
 ```
 
-## Support
+### 3️⃣ **Start the Application**
+```sh
+npm run start:dev
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+The service will be available at **`http://localhost:3020`**.
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 🔥 Using the Queue System
 
-## License
+### **Sending a Task via RabbitMQ**
+To send a task directly to RabbitMQ, use the provided `TaskProducer`:
+```ts
+await taskProducer.sendToQueue('email-queue', { message: 'Send email' });
+```
 
-Nest is [MIT licensed](LICENSE).
+### **Processing Tasks in the Worker**
+Workers listen for tasks and process them asynchronously:
+```ts
+@Process('process-task')
+async handleTask(job: Job) {
+  console.log(`Processing task ${job.id}:`, job.data);
+}
+```
+
+---
+
+## 💊 Monitoring & Metrics
+
+### **Check RabbitMQ Management UI**
+Visit `http://localhost:15672` and log in with:
+- **Username:** `guest`
+- **Password:** `guest`
+
+### **Check Prometheus Metrics**
+```sh
+curl http://localhost:3020/metrics
+```
+- Prometheus scrapes metrics automatically at **http://localhost:9090**.
+- Available metrics include **completed jobs, queue size, and processing time**.
+
+### **View Metrics in Grafana**
+1. Install and start Grafana:
+   ```sh
+   docker run -d --name grafana -p 3000:3000 grafana/grafana
+   ```
+2. Connect it to Prometheus (`http://localhost:9090`).
+3. Use the built-in dashboards or create custom visualizations.
+
+---
+
+## ✅ Running Tests
+Run unit and integration tests to verify functionality:
+```sh
+npm run test
+```
+
+---
+
+## 📝 License
+This project is licensed under the **MIT** license.
+
+---
+🚀 **Now your task queue system is ready for production!**
+
